@@ -25,7 +25,7 @@ class Model():
     indent = " "*4
     #feature_codebook = None
     #class_codebook = None
-    #feats_generator = None 
+    #feats_generator = None
     def __init__(self,elog=sys.stdout):
         self.elog = elog
         self.weight = None
@@ -52,14 +52,14 @@ class Model():
             'ABTTag':Alphabet()
         }
         self.abttag_count = defaultdict(int)
-        
+
     def setup(self,action_type,instances,parser,feature_templates_file=None):
         if feature_templates_file:
-            self._feats_templates_file = feature_templates_file 
+            self._feats_templates_file = feature_templates_file
         self.class_codebook = Alphabet.from_dict(dict((i,k) for i,(k,v) in enumerate(ACTION_TYPE_TABLE[action_type])),True)
         self.feature_codebook = dict([(i,Alphabet()) for i in self.class_codebook._index_to_label.keys()])
         self.read_templates()
-        
+
         #n_rel,n_tag = self._set_rel_tag_codebooks(instances,parser)
         n_subclass = self._set_rel_tag_codebooks(instances,parser)
         self._set_class_weight(self.class_codebook.size(),n_subclass)
@@ -74,7 +74,7 @@ class Model():
             for token in sent:
                 if token['pos'] == 'IN' and token['rel'] == 'prep':
                     self.pp_count_dict[token['form'].lower()] += 1
-    
+
     def _set_rel_tag_codebooks(self,instances,parser):
         #TODO
         self.rel_codebook.add(NULL_EDGE)
@@ -84,17 +84,17 @@ class Model():
         for inst in instances:
             gold_graph = inst.gold_graph
             gold_nodes = gold_graph.nodes
-            #gold_edges = gold_graph.edges 
+            #gold_edges = gold_graph.edges
             sent_tokens = inst.tokens
-            #state = parser.testOracleGuide(inst)            
+            #state = parser.testOracleGuide(inst)
 
             for g,d in gold_graph.tuples():
                 if isinstance(g,int):
                     gnode = gold_nodes[g]
-                    g_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(gnode.start,gnode.end)] 
+                    g_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(gnode.start,gnode.end)]
                     g_span_ne = sent_tokens[g]['ne']
                     g_entity_tag = gold_graph.get_node_tag(g)
-                    #if len(g_span_wds) > 1:  
+                    #if len(g_span_wds) > 1:
                     #    for gwd in g_span_wds:
                     #        self.token_to_concept_table[gwd].add(g_entity_tag)
                     if g_span_ne not in ['O','NUMBER']: # is name entity
@@ -111,9 +111,9 @@ class Model():
                     self.tag_codebook['ABTTag'].add(g_entity_tag)
                     self.abttag_count[g_entity_tag] += 1
                 '''
-                elif g in state.gold_graph.abt_node_table and isinstance(state.gold_graph.abt_node_table[g],int): # post aligned 
+                elif g in state.gold_graph.abt_node_table and isinstance(state.gold_graph.abt_node_table[g],int): # post aligned
                     gnode = state.A.nodes[state.gold_graph.abt_node_table[g]]
-                    g_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(gnode.start,gnode.end)] 
+                    g_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(gnode.start,gnode.end)]
                     g_span_ne = sent_tokens[state.gold_graph.abt_node_table[g]]['ne']
                     g_entity_tag = gold_graph.get_node_tag(g)
                     if g_span_ne not in ['O','NUMBER']: # is name entity
@@ -130,13 +130,13 @@ class Model():
 
                 if isinstance(d,int):
                     dnode = gold_nodes[d]
-                    d_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(dnode.start,dnode.end)] 
+                    d_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(dnode.start,dnode.end)]
                     d_span_ne = sent_tokens[d]['ne']
                     d_entity_tag = gold_graph.get_node_tag(d)
-                    #if len(d_span_wds) > 1:  
+                    #if len(d_span_wds) > 1:
                     #    for dwd in d_span_wds:
                     #        self.token_to_concept_table[dwd].add(d_entity_tag)
-                    if d_span_ne not in ['O','NUMBER']:                    
+                    if d_span_ne not in ['O','NUMBER']:
                         self.token_to_concept_table[d_span_ne].add(d_entity_tag)
                     self.token_to_concept_table[','.join(d_span_wds)].add(d_entity_tag)
 
@@ -152,9 +152,9 @@ class Model():
                     self.tag_codebook['ABTTag'].add(d_entity_tag)
                     self.abttag_count[d_entity_tag] += 1
                 '''
-                elif d in state.gold_graph.abt_node_table and isinstance(state.gold_graph.abt_node_table[d],int): # post aligned 
+                elif d in state.gold_graph.abt_node_table and isinstance(state.gold_graph.abt_node_table[d],int): # post aligned
                     dnode = state.A.nodes[state.gold_graph.abt_node_table[d]]
-                    d_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(dnode.start,dnode.end)] 
+                    d_span_wds = [tok['lemma'] for tok in sent_tokens if tok['id'] in range(dnode.start,dnode.end)]
                     d_span_ne = sent_tokens[state.gold_graph.abt_node_table[d]]['ne']
                     d_entity_tag = gold_graph.get_node_tag(d)
                     if d_span_ne not in ['O','NUMBER']: # is name entity
@@ -170,7 +170,7 @@ class Model():
 
 
                 g_edge_label = gold_graph.get_edge_label(g,d)
-                #if g_span_ne not in ['O','NUMBER']:                    
+                #if g_span_ne not in ['O','NUMBER']:
                 #    self.token_label_set[g_span_ne].add(g_edge_label)
                 #self.token_label_set[','.join(g_span_wds)].add(g_edge_label)
                 self.rel_codebook.add(g_edge_label)
@@ -198,15 +198,15 @@ class Model():
             if self.abttag_count[v] >= 8:
                 pruned_abttag_codebook.add(v)
         self.tag_codebook['ABTTag'] = pruned_abttag_codebook
-        
-        
+
+
     def _set_class_weight(self,n_class,n_subclass=None,init_feature_dim = 10**5):
-        
+
         #if n_rel == None:
         #    n_rel = [1]*n_class
         #assert len(n_rel) == n_class
 
-        
+
         #self.weight = [np.zeros(shape = (init_feature_dim,nt,nr),dtype=WEIGHT_DTYPE) for nr,nt in zip(n_rel,n_tag)]
         #self.aux_weight = [np.zeros(shape = (init_feature_dim,nt,nr),dtype=WEIGHT_DTYPE) for nr,nt in zip(n_rel,n_tag)]
         #self.avg_weight = [np.zeros(shape = (init_feature_dim,nt,nr),dtype=WEIGHT_DTYPE) for nr,nt in zip(n_rel,n_tag)]
@@ -215,8 +215,8 @@ class Model():
         self.aux_weight = [np.zeros(shape = (init_feature_dim,ns),dtype=WEIGHT_DTYPE) for ns in n_subclass]
         self.avg_weight = [np.zeros(shape = (init_feature_dim,ns),dtype=WEIGHT_DTYPE) for ns in n_subclass]
 
-    
-    def read_templates(self): 
+
+    def read_templates(self):
 
         ff_name = self._feats_templates_file
         for line in open(ff_name,'r'):
@@ -233,16 +233,16 @@ class Model():
 
     def output_feature_generator(self):
         """based on feature autoeval method in (Huang,2010)'s parser"""
-            
+
         import time
         self._feats_gen_filename = 'feats_gen_'+self._feats_templates_file.split('/')[-1].split('.')[0]#str(int(time.time()))
         output = open('./temp/'+self._feats_gen_filename+'.py','w')
-        
+
         output.write('#generated by model.py\n')
         output.write('from constants import *\n')
         output.write('def generate_features(state,action):\n')
         output.write(Model.indent+'s0,b0,a0=state.get_feature_context_window(action)\n')
-        
+
         element_set = set([])
         definition_str = Model.indent+'feats=[]\n'
         append_feats_str = ''
@@ -253,7 +253,7 @@ class Model():
         #definition_str += Model.indent+"lx = action['edge_label'] if 'edge_label' in action else EMPTY\n"
         #definition_str += Model.indent+"print state.model.class_codebook._label_to_index\n"
         #print self._feature_templates_list
-        
+
         for template,elements in self._feature_templates_list:
 
             for e in elements: # definition
@@ -269,10 +269,10 @@ class Model():
                 else:
                     pass
 
-            
+
             append_feats_str += "%sif [%s] != %s*[None]:feats.append(%s)\n" % (Model.indent,','.join(elements),len(elements),template)
             #append_feats_str += "%sfeats.append(%s)\n" % (Model.indent,template)
-            
+
         definition_str += "%sdist1=abs(s0['id']-b0['id']) if b0 and b0 is not ABT_TOKEN and s0 is not ABT_TOKEN else EMPTY\n"%(Model.indent)
         definition_str += "%sif dist1 > 10: dist1=10\n"%(Model.indent)
         definition_str += "%sdist2=abs(a0['id']-b0['id']) if b0 and a0 and b0 is not ABT_TOKEN and a0 is not ABT_TOKEN else EMPTY\n"%(Model.indent)
@@ -281,10 +281,10 @@ class Model():
         #definition_str += "%seqfrmset=s0['eqfrmset']\n"%(Model.indent)
         output.write(definition_str)
         output.write(append_feats_str)
-        
+
         output.write('%sreturn feats' % Model.indent)
         output.close()
-        
+
         #sys.path.append('/temp/')
         print "Importing feature generator!"
         self.feats_generator = importlib.import_module('temp.'+self._feats_gen_filename).generate_features
@@ -308,7 +308,7 @@ class Model():
             'tag_codebook':dict([(k,self.tag_codebook[k].to_dict()) for k in self.tag_codebook])
         }
         return model_dict
-        
+
     def save_model(self,model_filename):
         #pickle.dump(self,open(model_filename,'wb'),pickle.HIGHEST_PROTOCOL)
         print >> self.elog, 'Model info:'
@@ -329,7 +329,7 @@ class Model():
         #except SystemError as e:
         #    print >> sys.stderr, 'Saving model error:', e
         #    pass
-            
+
         try:
             #with contextlib.closing(bz2.BZ2File(model_filename, 'wb')) as f:
             with open(model_filename, 'wb') as f:
@@ -343,17 +343,43 @@ class Model():
         self.weight = weight
         self.aux_weight = aux_weight
         #self.avg_weight = avg_weight
-        
+
+    @staticmethod
+    def write_mpickle_model(model_filename):
+        import mpickle
+
+        with open(model_filename + "_take3.txt", "w") as fd:
+
+            fd.write("weight = " + mpickle.encode_weight(model.__dict__['weight']) + '\n')
+            fd.write("aux_weight = " + mpickle.encode_weight(model.__dict__['aux_weight']) + '\n')
+            fd.write("avg_weight = " + mpickle.encode_weight(model.__dict__['avg_weight']) + '\n')
+            fd.write("_feats_templates_file = " + model.__dict__['_feats_templates_file'] + '\n')
+            fd.write("_feats_gen_filename = " + model.__dict__['_feats_gen_filename'] + '\n')
+
+
+            fd.write("token_to_concept_table = " + mpickle.encode_token_table(model.__dict__['token_to_concept_table']) + '\n')
+
+            fd.write("pp_count_dict = " + mpickle.encode_pp_count_dict(model.__dict__['pp_count_dict']) + '\n')
+            fd.write("total_num_words = " + str(model.__dict__['total_num_words']) + '\n')
+
+            fd.write("class_codebook = " + mpickle.encode_Alphabet(model.__dict__['class_codebook']) + '\n')
+            fd.write("feature_codebook = " + mpickle.encode_feature_codebook(model.__dict__['feature_codebook']) + '\n')
+            fd.write("rel_codebook = " + mpickle.encode_Alphabet(model.__dict__['rel_codebook']) + '\n')
+            fd.write("tag_codebook = " + mpickle.encode_feature_codebook(model.__dict__['tag_codebook']) + '\n')
+            fd.write("abttag_count = " + mpickle.encode_pp_count_dict(model.__dict__['abttag_count']) + '\n')
+
+            raise Exception('Stop encoding')
+
     @staticmethod
     def load_model(model_filename):
-        
-        #with contextlib.closing(bz2.BZ2File(model_filename, 'rb')) as f:
         with open(model_filename, 'rb') as f:
             model = pickle.load(f)
-        # deal with module name conflict
-        #tmp = sys.path.pop(0)
-        #model.avg_weight = np.load(open(model_filename+'.weight', 'rb'))
-        #sys.path.insert(0,tmp)
+
+
+        # print model.__dict__
+        # write_mpickle_model(model_filename)
+
+
         return model
         #return pickle.load(open(model_filename,'rb'))
         '''

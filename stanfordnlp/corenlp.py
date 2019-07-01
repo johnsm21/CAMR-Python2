@@ -3,17 +3,17 @@
 # corenlp  - Python interface to Stanford Core NLP tools
 # Copyright (c) 2012 Dustin Smith
 #   https://github.com/dasmith/stanford-corenlp-python
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -55,8 +55,8 @@ def parse_bracketed(s):
         else:
             attrs[attr.strip()] = val
     return (word, attrs)
-   
-        
+
+
 def parse_parser_results(text):
     """ This is the nasty bit of code to interact with the command-line
     interface of the CoreNLP tools.  Takes a string of the parser results
@@ -80,7 +80,7 @@ def parse_parser_results(text):
             Data.newSen()
             data.addText(line)
             state = STATE_WORDS
-        
+
         elif state == STATE_WORDS:
             if len(line) == 0:
                 continue
@@ -93,7 +93,7 @@ def parse_parser_results(text):
                               t[1][u'Lemma'],t[1][u'PartOfSpeech'],t[1][u'NamedEntityTag'])
             state = STATE_TREE
             parsed = []
-        
+
         elif state == STATE_TREE:
             if len(line) == 0:
                 state = STATE_DEPENDENCY
@@ -101,7 +101,7 @@ def parse_parser_results(text):
                 #data.addTree(Tree.parse(parsed))
             else:
                 parsed.append(line)
-        
+
         elif state == STATE_DEPENDENCY:
             if len(line) == 0:
                 state = STATE_COREFERENCE
@@ -130,7 +130,7 @@ def parse_parser_results(text):
                     src_i, src_pos, src_l, src_r = int(src_i), int(src_pos), int(src_l), int(src_r)
                     sink_i, sink_pos, sink_l, sink_r = int(sink_i), int(sink_pos), int(sink_l), int(sink_r)
                     coref_set.append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
-    
+
     return data
 
 
@@ -150,7 +150,8 @@ def parse_parser_results_new(text):
     #for line in re.split("\r\n(?![^\[]*\])",text):
     seqs = re.split("\r\n", text)
     i = 0
-
+    print("Parser Result = {" + str(text) + "}")
+    print("seqs = {" + str(seqs) + "}")
     #for line in re.split("\r\n", text):
     while i < len(seqs):
         line = seqs[i]
@@ -168,25 +169,25 @@ def parse_parser_results_new(text):
                 lastline = line
                 state = STATE_SENT_ERROR
             i += 1
-            
+
         elif state == STATE_SENT_ERROR:
             line = lastline + line
             assert SENTENCE_NO_PATTERN.match(line) is not None
             state = STATE_TEXT
             i += 1
-            
+
         elif state == STATE_TEXT_ERROR:
             line = line + following_line
             data.addText(line)
             state = STATE_WORDS
             i += 2
-        
+
         elif state == STATE_TEXT:
             Data.newSen()
             data.addText(line)
             state = STATE_WORDS
             i += 1
-        
+
         elif state == STATE_WORDS:
             if len(line) == 0:
                 continue
@@ -198,7 +199,7 @@ def parse_parser_results_new(text):
                 state = STATE_TEXT_ERROR
                 i -= 1
                 continue
-                
+
             #for s in WORD_PATTERN.findall(line):
             wline = line
             while WORD_PATTERN.match(wline):
@@ -223,7 +224,7 @@ def parse_parser_results_new(text):
                 continue
             state = STATE_TREE
             parsed = []
-        
+
         elif state == STATE_TREE:
             if len(line) == 0:
                 state = STATE_DEPENDENCY
@@ -233,7 +234,7 @@ def parse_parser_results_new(text):
             else:
                 parsed.append(line)
                 i += 1
-        
+
         elif state == STATE_DEPENDENCY:
             if len(line) == 0:
                 state = STATE_COREFERENCE
@@ -268,7 +269,7 @@ def parse_parser_results_new(text):
             i += 1
         else:
             i += 1
-        
+
     return data_list
 
 
@@ -288,17 +289,17 @@ def add_sep_dependency(instances,result):
                 l_lemma, l_index = m.group('lemma'), m.group('index')
                 m = re.match(r'(?P<lemma>.+)-(?P<index>[^-]+)', r_lemma)
                 r_lemma, r_index = m.group('lemma'), m.group('index')
-                
+
                 instances[i].addDependency( rel, l_lemma, r_lemma, l_index, r_index )
-                
+
         else:
             i += 1
 
 class StanfordCoreNLP(object):
     """
     Command-line interaction with Stanford's CoreNLP java utilities.
-    Can be run as a JSON-RPC server or imported as a module. We use CoreNLP 
-    to preprocess the sentence to get universal tokenization, lemma, name entity 
+    Can be run as a JSON-RPC server or imported as a module. We use CoreNLP
+    to preprocess the sentence to get universal tokenization, lemma, name entity
     and POS if possible. However, we may use different dependency parsers here.
     """
 
@@ -306,7 +307,7 @@ class StanfordCoreNLP(object):
     def __init__(self):
         Data.current_sen = 1
         pass
-        
+
     def setup(self):
         """
         Checks the location of the jar files.
@@ -326,19 +327,19 @@ class StanfordCoreNLP(object):
                 "protobuf.jar",
                 "javax.json.jar",
                 "ejml-0.23.jar"]
-        
-       
+
+
         # if CoreNLP libraries are in a different directory,
         # change the corenlp_path variable to point to them
         corenlp_path = os.path.relpath(__file__).split('/')[0]+"/stanford-corenlp-full-2015-04-20/"
         #corenlp_path = "stanford-corenlp-full-2013-06-20/"
-        
+
         java_path = "java"
         classname = "edu.stanford.nlp.pipeline.StanfordCoreNLP"
         # include the properties file, so you can change defaults
         # but any changes in output format will break parse_parser_results()
         props = "-props "+ os.path.relpath(__file__).split('/')[0]+"/default.properties"
-        
+
         # add and check classpaths
         jars = [corenlp_path + jar for jar in jars]
         for jar in jars:
@@ -351,7 +352,7 @@ class StanfordCoreNLP(object):
         start_corenlp = "%s -Xmx2500m -cp %s %s %s" % (java_path, ':'.join(jars), classname, props)
         if VERBOSE: print start_corenlp
         self.corenlp = pexpect.spawn(start_corenlp)
-        
+
         # show progress bar while loading the models
         widgets = ['Loading Models: ', Fraction()]
         pbar = ProgressBar(widgets=widgets, maxval=4, force_update=True).start()
@@ -367,11 +368,11 @@ class StanfordCoreNLP(object):
 #        pbar.update(5)
         self.corenlp.expect("Entering interactive shell.")
         pbar.finish()
-    
+
     def _parse(self, text):
         """
         This is the core interaction with the parser.
-               
+
         """
         # clean up anything leftover
         while True:
@@ -379,17 +380,17 @@ class StanfordCoreNLP(object):
                 self.corenlp.read_nonblocking (4000, 0.3)
             except pexpect.TIMEOUT:
                 break
-        
+
         self.corenlp.sendline(text)
-        
+
         # How much time should we give the parser to parse it?
-        # the idea here is that you increase the timeout as a 
+        # the idea here is that you increase the timeout as a
         # function of the text's length.
         # anything longer than 5 seconds requires that you also
         # increase timeout=5 in jsonrpc.py
         max_expected_time = min(20, 3 + len(text) / 20.0)
         end_time = time.time() + max_expected_time
-        
+
         incoming = ""
         while True:
             # Time left, read more data
@@ -407,7 +408,7 @@ class StanfordCoreNLP(object):
                     continue
             except pexpect.EOF:
                 break
-        
+
         if VERBOSE: print "%s\n%s" % ('='*40, repr(incoming))
         return incoming
 
@@ -419,11 +420,11 @@ class StanfordCoreNLP(object):
 
         jars = ["stanford-parser-3.3.1-models.jar",
                 "stanford-parser.jar"]
-       
+
         # if CoreNLP libraries are in a different directory,
         # change the corenlp_path variable to point to them
         corenlp_path = os.path.relpath(__file__).split('/')[0]+"/stanford-parser/"
-        
+
         java_path = "java"
         classname = "edu.stanford.nlp.parser.lexparser.LexicalizedParser"
         # include the properties file, so you can change defaults
@@ -442,22 +443,22 @@ class StanfordCoreNLP(object):
         # spawn the server
         start_depparser = "%s -Xmx1800m -cp %s %s %s %s %s" % (java_path, ':'.join(jars), classname, flags, model, sent_filename)
         if VERBOSE: print start_depparser
-        #incoming = pexpect.run(start_depparser)    
+        #incoming = pexpect.run(start_depparser)
         process = subprocess.Popen(start_depparser.split(),shell=False,stdout=subprocess.PIPE)
         incoming = process.communicate()[0]
         print 'Incoming',incoming
-        
+
         return incoming
     '''
 
     def parse(self, sent_filename):
-        """ 
+        """
         This function takes a text string, sends it to the Stanford CoreNLP,
         reads in the result, parses the results and returns a list
-        of data instances for each parsed sentence. Dependency parsing may operate 
+        of data instances for each parsed sentence. Dependency parsing may operate
         seperately for easy changing dependency parser.
         """
-        
+
         instances = []
         prp_filename = sent_filename+'.prp' # preprocessed file
         if os.path.exists(prp_filename):
@@ -470,7 +471,7 @@ class StanfordCoreNLP(object):
                 #    import pdb
                 #    pdb.set_trace()
                 #i += 1
-                
+
                 # fix additional newline bug for old version of stanford nlp
                 #if len(result_list) == 6:
                 #    result_list[3] = result_list[3] + result_list[4]
@@ -480,7 +481,7 @@ class StanfordCoreNLP(object):
                 if i > 0 and i % 100 == 0:
                     sys.stdout.write('.')
                     sys.stdout.flush()
-        
+
                 try:
                     data = parse_parser_results_new(result)
                 except Exception, e:
@@ -496,7 +497,7 @@ class StanfordCoreNLP(object):
             sys.stdout.write('\n')
 
         else:
-            output_prp = open(prp_filename,'w')          
+            output_prp = open(prp_filename,'w')
 
             for i,line in enumerate(open(sent_filename,'r').readlines()):
                 result = self._parse(line)
@@ -526,7 +527,7 @@ class StanfordCoreNLP(object):
                 output_dep.close()
 
             add_sep_dependency(instances,dep_result)
-         '''   
+         '''
         return instances
 
 
@@ -541,16 +542,16 @@ if __name__ == '__main__':
                       help='Port to serve or kill on (default 2346)')
     parser.add_option('-H', '--host', default='127.0.0.1',
                       help='Host to serve on (default localhost; 0.0.0.0 to make public)')
-    
+
     options, args = parser.parse_args()
 
     if options.type == 'serve':
         server = jsonrpc.Server(jsonrpc.JsonRpc20(),
                                 jsonrpc.TransportTcpIp(addr=(options.host, int(options.port))))
-        
+
         nlp = StanfordCoreNLP()
         server.register_function(nlp.parse)
-        
+
         print 'Serving on http://%s:%s' % (options.host, options.port)
         server.serve()
     else:

@@ -19,7 +19,7 @@ def load_hand_alignments(hand_aligned_file):
     for comment, amr_string in zip(comments,amr_strings):
         hand_alignments[comment['id']] = comment['alignments']
     return hand_alignments
-        
+
 
 def readAMR(amrfile_path):
     amrfile = codecs.open(amrfile_path,'r',encoding='utf-8')
@@ -82,7 +82,7 @@ def _write_sentences(file_path,sentences):
     """
     write out the sentences to file
     """
-    print >> log, "Writing sentence file to %s" % file_path 
+    print >> log, "Writing sentence file to %s" % file_path
     output = codecs.open(file_path,'w',encoding='utf-8')
     for sent in sentences:
         output.write(sent+'\n')
@@ -106,7 +106,7 @@ def _write_tok_amr(file_path,amr_file,instances):
     amr_list = []
     for line in codecs.open(amr_file,'r',encoding='utf-8').readlines():
         if line.startswith('#'):
-            origin_comment_string += line 
+            origin_comment_string += line
         elif not line.strip():
             if origin_amr_string and origin_comment_string:
                 comment_list.append(origin_comment_string)
@@ -130,13 +130,13 @@ def _write_tok_amr(file_path,amr_file,instances):
 
 def _add_amr(instances,amr_strings):
     assert len(instances) == len(amr_strings)
-    
+
     for i in range(len(instances)):
         instances[i].addAMR(AMR.parse_string(amr_strings[i]))
 
 def _load_cparse(cparse_filename):
     '''
-    load the constituent parse tree 
+    load the constituent parse tree
     '''
     from nltk.tree import Tree
     ctree_list = []
@@ -164,14 +164,14 @@ def _fix_prop_head(inst,ctree,start_index,height):
             cur = inst.tokens[cur['id']+1]
             continue
         head_index = cur['id'] - 1
-        
+
         if 'head' in cur:
             cur = inst.tokens[cur['head']]
         else:
             cur = inst.tokens[cur['id']+1]
 
     return head_index
-    
+
 def _add_prop(instances,prop_filename,dep_filename,FIX_PROP_HEAD=False):
     ctree_list = None
     if FIX_PROP_HEAD:
@@ -193,7 +193,7 @@ def _add_prop(instances,prop_filename,dep_filename,FIX_PROP_HEAD=False):
                 if label != 'rel':
                     if FIX_PROP_HEAD: head_index = _fix_prop_head(instances[sid],ctree_list[sid],start_index,height)
                     instances[sid].addProp(ppos+1,frameset,int(head_index)+1,label)
-                
+
 
 def _substitute_rne(instances, rne_filename):
     '''
@@ -212,23 +212,23 @@ def _substitute_rne(instances, rne_filename):
                 pdb.set_trace()
             instances[i].tokens[j]['ne'] = rne_ne
         assert rne_lines.next().strip() == ''
-                    
+
 def _add_dependency(instances,result,FORMAT="stanford"):
     if FORMAT=="stanford":
         i = 0
         for line in result.split('\n'):
             if line.strip():
                 split_entry = re.split("\(|, ", line[:-1])
-                
+
                 if len(split_entry) == 3:
                     rel, l_lemma, r_lemma = split_entry
                     m = re.match(r'(?P<lemma>.+)-(?P<index>[^-]+)', l_lemma)
                     l_lemma, l_index = m.group('lemma'), m.group('index')
                     m = re.match(r'(?P<lemma>.+)-(?P<index>[^-]+)', r_lemma)
                     r_lemma, r_index = m.group('lemma'), m.group('index')
-                    
+
                     instances[i].addDependency( rel, l_index, r_index )
-                
+
             else:
                 i += 1
     elif FORMAT == "clear":
@@ -260,7 +260,7 @@ def _add_dependency(instances,result,FORMAT="stanford"):
         for line in result.split('\n'):
             if line.strip():
                 split_entry = re.split("\(|, ", line[:-1])
-                
+
                 if len(split_entry) == 3:
                     rel, l_lemma, r_lemma = split_entry
                     m = re.match(r'(?P<lemma>.+)-(?P<index>[^-]+)', l_lemma)
@@ -281,8 +281,8 @@ def _add_dependency(instances,result,FORMAT="stanford"):
                             import pdb
                             pdb.set_trace()
                     if r_trace is not None:
-                        instances[i].addTrace( rel, l_index, r_trace )                      
-                
+                        instances[i].addTrace( rel, l_index, r_trace )
+
             else:
                 i += 1
     else:
@@ -315,15 +315,15 @@ def load_xml_instances(input_xml):
     print >> log, "Total number of sentences: %d, number of tokens: %s" % (nb_sent, nb_tok)
 
     return instances
-            
+
 def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
     '''nasty function'''
     tmp_sent_filename = None
     instances = None
     tok_sent_filename = None
-    
+
     if INPUT_AMR == 'amr': # the input file is amr annotation
-        
+
         amr_file = input_file
         aligned_amr_file = amr_file + '.amr.tok.aligned'
         if os.path.exists(aligned_amr_file):
@@ -341,8 +341,8 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         instances = None
         if PRP_FORMAT == 'plain':
             tmp_prp_filename = tmp_sent_filename+'.prp'
-            
-            
+
+
             proc1 = StanfordCoreNLP()
 
             # preprocess 1: tokenization, POS tagging and name entity using Stanford CoreNLP
@@ -351,7 +351,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
                 print >> log, "Start Stanford CoreNLP..."
                 proc1.setup()
 
-            print >> log, 'Read token,lemma,name entity file %s...' % (tmp_prp_filename)            
+            print >> log, 'Read token,lemma,name entity file %s...' % (tmp_prp_filename)
             instances = proc1.parse(tmp_sent_filename)
 
         elif PRP_FORMAT == 'xml': # rather than using corenlp plain format; using xml format; also we don't use corenlp wrapper anymore
@@ -362,7 +362,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
             instances = load_xml_instances(tmp_prp_filename)
         else:
             raise Exception('Unknow preprocessed file format %s' % PRP_FORMAT)
-            
+
         tok_sent_filename = tmp_sent_filename+'.tok' # write tokenized sentence file
         if not os.path.exists(tok_sent_filename):
             _write_tok_sentences(tok_sent_filename,instances)
@@ -370,7 +370,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         tok_amr_filename = amr_file + '.amr.tok'
         if not os.path.exists(tok_amr_filename): # write tokenized amr file
             _write_tok_amr(tok_amr_filename,amr_file,instances)
-            
+
         SpanGraph.graphID = 0
         for i in xrange(len(instances)):
 
@@ -390,7 +390,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
     elif INPUT_AMR == 'amreval':
         eval_file = input_file
         comments = readAMREval(eval_file)
-        sentences = [c['snt'] for c in comments] 
+        sentences = [c['snt'] for c in comments]
 
         # write sentences(separate per line)
         tmp_sent_filename = eval_file+'.sent'
@@ -411,14 +411,14 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
             instances = proc1.parse(tmp_sent_filename)
         else:
             raise Exception('No cache file %s has been found. set START_SNLP=True to start corenlp.' % (tmp_prp_filename))
-            
+
         tok_sent_filename = tmp_sent_filename+'.tok' # write tokenized sentence file
         if not os.path.exists(tok_sent_filename):
             _write_tok_sentences(tok_sent_filename,instances)
-            
+
         for i in xrange(len(instances)):
             instances[i].addComment(comments[i])
-        
+
     else:        # input file is sentence
         tmp_sent_filename = input_file
 
@@ -435,7 +435,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
                 print >> log, "Start Stanford CoreNLP..."
                 proc1.setup()
 
-            print >> log, 'Read token,lemma,name entity file %s...' % (tmp_prp_filename)            
+            print >> log, 'Read token,lemma,name entity file %s...' % (tmp_prp_filename)
             instances = proc1.parse(tmp_sent_filename)
 
         elif PRP_FORMAT == 'xml': # rather than using corenlp plain format; using xml format; also we don't use corenlp wrapper anymore
@@ -447,7 +447,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         else:
             raise Exception('Unknow preprocessed file format %s' % PRP_FORMAT)
 
-        
+
         # tmp_prp_filename = tmp_sent_filename+'.prp'
         # proc1 = StanfordCoreNLP()
 
@@ -461,25 +461,25 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         #     instances = proc1.parse(tmp_sent_filename)
         # else:
         #     raise Exception('No cache file %s has been found. set START_SNLP=True to start corenlp.' % (tmp_prp_filename))
-        
+
 
         tok_sent_filename = tmp_sent_filename+'.tok' # write tokenized sentence file
         if not os.path.exists(tok_sent_filename):
             _write_tok_sentences(tok_sent_filename,instances)
-        
-    # preprocess 2: dependency parsing 
+
+    # preprocess 2: dependency parsing
     if constants.FLAG_DEPPARSER == "stanford":
         dep_filename = tok_sent_filename+'.stanford.dep'
         if os.path.exists(dep_filename):
-            print 'Read dependency file %s...' % (dep_filename)                                                                 
+            print 'Read dependency file %s...' % (dep_filename)
             dep_result = codecs.open(dep_filename,'r',encoding='utf-8').read()
         else:
             dparser = StanfordDepParser()
             dep_result = dparser.parse(tok_sent_filename)
-            output_dep = codecs.open(dep_filename,'w',encoding='utf-8')            
+            output_dep = codecs.open(dep_filename,'w',encoding='utf-8')
             output_dep.write(dep_result)
             output_dep.close()
-            
+
         _add_dependency(instances,dep_result)
     elif constants.FLAG_DEPPARSER == "stanfordConvert":
         dep_filename = tok_sent_filename+'.stanford.parse.dep'
@@ -498,7 +498,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         elif constants.FLAG_ONTO == 'onto+bolt':
             dep_filename = tok_sent_filename+'.charniak.onto+bolt.parse.dep'
         else:
-            dep_filename = tok_sent_filename+'.charniak.parse.dep'            
+            dep_filename = tok_sent_filename+'.charniak.parse.dep'
         if not os.path.exists(dep_filename):
             dparser = CharniakParser()
             dparser.parse(tok_sent_filename)
@@ -506,11 +506,11 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         print 'Read dependency file %s...' % (dep_filename)
         dep_result = codecs.open(dep_filename,'r',encoding='utf-8').read()
         _add_dependency(instances,dep_result,constants.FLAG_DEPPARSER)
-            
+
     elif constants.FLAG_DEPPARSER == "clear":
         dep_filename = tok_sent_filename+'.clear.dep'
         if os.path.exists(dep_filename):
-            print 'Read dependency file %s...' % (dep_filename)                                                                 
+            print 'Read dependency file %s...' % (dep_filename)
             dep_result = open(dep_filename,'r').read()
         else:
             dparser = ClearDepParser()
@@ -520,7 +520,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
     elif constants.FLAG_DEPPARSER == "turbo":
         dep_filename = tok_sent_filename+'.turbo.dep'
         if os.path.exists(dep_filename):
-            print 'Read dependency file %s...' % (dep_filename)                                                                 
+            print 'Read dependency file %s...' % (dep_filename)
             dep_result = open(dep_filename,'r').read()
         else:
             dparser = TurboDepParser()
@@ -530,7 +530,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
     elif constants.FLAG_DEPPARSER == "mate":
         dep_filename = tok_sent_filename+'.mate.dep'
         if os.path.exists(dep_filename):
-            print 'Read dependency file %s...' % (dep_filename)                                                                 
+            print 'Read dependency file %s...' % (dep_filename)
             dep_result = open(dep_filename,'r').read()
         else:
             dparser = MateDepParser()
@@ -539,7 +539,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
     else:
         #pass
         raise Exception('Unknown dependency parse type %s' % (constants.FLAG_DEPPARSER))
-    
+
     if constants.FLAG_PROP:
         print >> log, "Adding SRL information..."
         prop_filename = tok_sent_filename + '.prop' if constants.FLAG_ONTO != 'onto+bolt' else tok_sent_filename + '.onto+bolt.prop'
@@ -548,7 +548,7 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
                 _add_prop(instances,prop_filename,dep_filename,FIX_PROP_HEAD=True)
             else:
                 _add_prop(instances,prop_filename,dep_filename)
-            
+
         else:
             raise IOError('Semantic role labeling file %s not found!' % (prop_filename))
 
@@ -560,15 +560,15 @@ def preprocess(input_file,START_SNLP=True,INPUT_AMR='amr',PRP_FORMAT='plain'):
         else:
             raise IOError('Rich name entity file %s not found!' % (rne_filename))
 
-        
+
     return instances
 '''
 def _init_instances(sent_file,amr_strings,comments):
     print >> log, "Preprocess 1:pos, ner and dependency using stanford parser..."
     proc = StanfordCoreNLP()
     instances = proc.parse(sent_file)
-    
-    
+
+
     print >> log, "Preprocess 2:adding amr and generating gold graph"
     assert len(instances) == len(amr_strings)
     for i in range(len(instances)):
@@ -601,12 +601,12 @@ def preprocess_aligned(aligned_amr_file,writeToFile=True):
     sentences = [c['tok'] for c in comments]
     tmp_sentence_file = aligned_amr_file.rsplit('.',1)[0]+'_sent.txt'
     _write_sentences(tmp_sentence_file,sentences)
-    
+
     instances = _init_instances(tmp_sentence_file,amr_strings,comments)
     if writeToFile:
         output_file = aligned_amr_file.rsplit('.',1)[0]+'_dataInst.p'
         pickle.dump(instances,open(output_file,'wb'),pickle.HIGHEST_PROTOCOL)
-        
+
     return instances
 '''
 
@@ -616,9 +616,8 @@ if __name__ == "__main__":
     #arg_parser.add_argument('-m','--mode',choices=['train','parse'])
     arg_parser.add_argument('-w','--writeToFile',action='store_true',help='write preprocessed sentences to file')
     arg_parser.add_argument('amr_file',help='amr bank file')
-    
-    args = arg_parser.parse_args()    
+
+    args = arg_parser.parse_args()
 
     instances = preprocess(args.amr_file)
     pprint(instances[1].toJSON())
-    

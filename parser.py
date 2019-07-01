@@ -31,7 +31,7 @@ class Parser(object):
     cm = None # confusion matrix for error analysis
     rtx = None # array for store the rumtime data
     rty = None #
-    
+
     def __init__(self,model=None,oracle_type=DETERMINE_TREE_TO_GRAPH_ORACLE_SC,action_type='basic',verbose=1,elog=sys.stdout):
         self.sent = ''
         self.oracle_type=oracle_type
@@ -60,12 +60,25 @@ class Parser(object):
 
     def get_best_act(self,scores,actions):
         best_label_index = None
-        best_act_ind = np.argmax(map(np.amax,scores))
+
+        map_max = map(np.amax,scores)
+
+        list_map_max = list(map_max)
+        print('map_max = ' + str(list_map_max))
+        map_max = map(lambda x: x, list_map_max)
+
+        best_act_ind = np.argmax(map_max)
         best_act = actions[best_act_ind]
+
+        print('+++++++++++++++++++++++')
+        print('best_act_ind = ' + str(best_act_ind))
+        print('best_act = ' + str(best_act))
+        print('+++++++++++++++++++++++')
+
         if best_act['type'] in ACTION_WITH_EDGE or best_act['type'] in ACTION_WITH_TAG:
             best_label_index = scores[best_act_ind].argmax()
         return best_act_ind, best_label_index
-        
+
     def get_best_act_constraint(self,scores,actions,argset):
         best_label_index = None
         best_act_ind = np.argmax(map(np.amax,scores))
@@ -111,7 +124,7 @@ class Parser(object):
         n_correct_total = .0
         n_parsed_total = .0
         #n_gold_total = .0
-        
+
         for i,inst in enumerate(instances,1):
             #per_start_time = time.time()
             _,state = self.parse(inst)
@@ -136,7 +149,7 @@ class Parser(object):
         start_time = time.time()
         parsed_amr = []
         span_graph_pairs = []
-        
+
         if EVAL:
             Parser.cm = np.zeros(shape=(len(GraphState.action_table),len(GraphState.action_table)))
             Parser.rtx = []
@@ -203,14 +216,14 @@ class Parser(object):
                 score = (p1,r1,f1,lp1,lr1,lf1,tp1,tr1)
                 ##########################
                 #gold edge labeled amr; gold tag labeled amr ;for comparison
-                #garc_graph = state.get_gold_edge_graph()                
-                #parsed_amr.append(GraphState.get_parsed_amr(garc_graph))            
+                #garc_graph = state.get_gold_edge_graph()
+                #parsed_amr.append(GraphState.get_parsed_amr(garc_graph))
                 #
                 #gtag_graph = state.get_gold_tag_graph()
-                #parsed_amr.append(GraphState.get_parsed_amr(gtag_graph))            
+                #parsed_amr.append(GraphState.get_parsed_amr(gtag_graph))
 
                 #g_graph = state.get_gold_label_graph()
-                #parsed_amr.append(GraphState.get_parsed_amr(g_graph))            
+                #parsed_amr.append(GraphState.get_parsed_amr(g_graph))
                 ############################
 
 
@@ -251,48 +264,54 @@ class Parser(object):
             #import random
             #print random.sample(brackets['0-40'],10)
             #print random.sample(brackets['40-60'],10)
-            #print random.sample(brackets['60-100'],10)        
+            #print random.sample(brackets['60-100'],10)
 
             #return results
         else:
-
+            print('Look Here Matt')
+            print('Before Results = ' + str(parsed_amr))
             for i,inst in enumerate(instances,1):
                 per_start_time = time.time()
                 step,state = self.parse(inst,train=False)
+                print('step = ' + str(step))
+                print('state = ' + str(state))
                 per_parse_time = round(time.time()-per_start_time,3)
 
                 parsed_amr.append(GraphState.get_parsed_amr(state.A))
                 if self.verbose > 1: print >> self.elog, "Done parsing sentence %s" % (state.sentID)
-                
+
             print >> self.elog,"Parsing on %s instances takes %s" % (str(i),datetime.timedelta(seconds=round(time.time()-start_time,0)))
-            
+
+        print('Results = ' + str(parsed_amr))
         return span_graph_pairs, parsed_amr
-        
+
     def _parse(self,instance):
         self.perceptron.no_update()
         return (True,Parser.State.init_state(instance,self.verbose))
-    
-    def parse(self,instance,train=True): 
+
+    def parse(self,instance,train=True):
         # no beam; pseudo deterministic oracle
         state = Parser.State.init_state(instance,self.verbose)
         ref_graph = instance.gold_graph
         step = 0
         pre_state = None
-        
-        
+
+
         while not state.is_terminal():
             if self.verbose > 2:
                 print >> sys.stderr, state.print_config()
-            
+
             #start_time = time.time()
             violated = False
             actions = state.get_possible_actions(train)
+            print('early actions = '+ str(actions))
             #argset = map(Parser.State.model.rel_codebook.get_index,list(state.get_current_argset()))
             #print "Done getactions, %s"%(round(time.time()-start_time,2))
 
             if len(actions) == 1:
                 best_act = actions[0]
                 best_label = None
+                print('best_label = '+ str(best_label))
             else:
                 if train:
                     features = map(state.make_feat,actions)
@@ -311,7 +330,7 @@ class Parser(object):
                     except ValueError:
                         if self.verbose > 2:
                             print >> sys.stderr, 'WARNING: gold action %s not in possible action set %s'%(str(gold_act),str(actions))
-                            
+
                         if gold_act['type'] != NEXT2:
                             violated = True # violated the constraint
 
@@ -334,28 +353,37 @@ class Parser(object):
 
                     if (gold_act != best_act or gold_label != best_label) and not violated:
                         self.perceptron.update_weight_one_step(actions[gold_act_ind]['type'],features[gold_act_ind],gold_label_index,actions[best_act_ind]['type'],features[best_act_ind],best_label_index)
-                        
+
                     else:
                         self.perceptron.no_update()
 
                     best_act = gold_act
                     best_label = gold_label
-                    
+
                     #print "Done update, %s"%(round(time.time()-start_time,2))
                     #raw_input('ENTER TO CONTINUE')
                 else:
+                    print('actions = ' + str(actions))
                     features = map(state.make_feat,actions)
+                    # print('features = ' + str(list(features)))
+
                     scores = map(state.get_score,(act['type'] for act in actions),features,[train]*len(actions))
 
+                    listScores = list(scores)
+                    print('listScores = ' + str(listScores))
+                    scores = map(lambda x: x, listScores)
+
                     best_act_ind, best_label_index = self.get_best_act(scores,actions)#,argset)
+                    print('best_act_ind = ' + str(best_act_ind))
                     best_act = actions[best_act_ind]
                     best_label = Parser.get_index_label(best_act,best_label_index)
+                    print('best_label = ' + str(best_label))
 
                     if self.verbose == 1:
                         gold_act, gold_label = Parser.oracle.give_ref_action(state,ref_graph)
 
                         self.evaluate_actions(actions[best_act_ind],best_label_index,gold_act,gold_label,ref_graph)
-                    
+
 
                     if self.verbose > 2:
                         print >> sys.stderr, "Step %s: (%s,%s) | take action %s, label:%s | gold action %s,label:%s | State:sigma:%s beta:%s" % (step,actions[best_act_ind]['type'],gold_act['type'],actions[best_act_ind],best_label,gold_act,gold_label,state.sigma,state.beta)
@@ -366,13 +394,13 @@ class Parser(object):
                             self.output_weight(best_act_ind,best_label_index,features,actions)
                             if gold_act.get('tag',None) != best_act.get('tag',None) and 'tag' in gold_act and not (isinstance(gold_act['tag'],(ETag,ConstTag)) or re.match('\w+-\d+',gold_act['tag'])):
                                 print >> sys.stderr, "Gold concept tag %s"%(gold_act['tag'])
-                                
-                            if gold_act in actions:                                
+
+                            if gold_act in actions:
                                 gold_act_ind = actions.index(gold_act)
                                 gold_label_index = Parser.State.model.rel_codebook.get_index(gold_label)
                                 self.output_weight(gold_act_ind,gold_label_index,features,actions)
 
-                                
+
                     if self.verbose > 5:
                         # correct reentrance pair error
                         #if actions[best_act_ind]['type'] == REENTRANCE or gold_act['type'] == REENTRANCE:
@@ -382,21 +410,22 @@ class Parser(object):
                             #    if gold_act not in actions:
                             #        import pdb
                             #        pdb.set_trace()
-                            
-                        if gold_act in actions:                                
+
+                        if gold_act in actions:
                             gold_act_ind = actions.index(gold_act)
                             gold_label_index = Parser.State.model.rel_codebook.get_index(gold_label)
                             self.output_weight(gold_act_ind,gold_label_index,features,actions)
 
-                        
+
             act_to_apply = best_act
             if act_to_apply['type'] in ACTION_WITH_EDGE:
                 act_to_apply['edge_label'] = best_label
             elif act_to_apply['type'] in ACTION_WITH_TAG:
                 act_to_apply['tag'] = best_label
             pre_state = state
+            print('act_to_apply = ' + str(act_to_apply))
             state = state.apply(act_to_apply)
-            
+
             step += 1
 
         if self.verbose == 1:
@@ -423,13 +452,13 @@ class Parser(object):
                 for action in prev.get_possible_actions():
                     pass
 
-        
+
 
     def output_weight(self,act_ind,label_index,feats,actions):
         '''for debug '''
         label_ind = label_index if label_index is not None else 0
         feats_fired = feats[act_ind]
-        act_idx = GraphState.model.class_codebook.get_index(actions[act_ind]['type']) 
+        act_idx = GraphState.model.class_codebook.get_index(actions[act_ind]['type'])
         weight = GraphState.model.avg_weight[act_idx]
         feat_idx = map(GraphState.model.feature_codebook[act_idx].get_index,feats_fired)
         weight_sum = np.sum(weight[ [i for i in feat_idx if i is not None] ],axis = 0)
@@ -441,7 +470,7 @@ class Parser(object):
             import pdb
             pdb.set_trace()
         #print >> sys.stderr,Parser.State.model.rel_codebook.get_label(0)
-        
+
     def evaluate_actions(self,best_act,best_label_index,gold_act,gold_label,ref_graph):
         Parser.cm[gold_act['type'],best_act['type']] += 1.0
 
@@ -457,10 +486,10 @@ class Parser(object):
             print state.A.print_tuples()
             action_str = raw_input('input action:')
             if not action_str:
-                break                    
-            act_type = int(action_str.split()[0])            
+                break
+            act_type = int(action_str.split()[0])
             if len(action_str) == 2:
-                child_to_add = int(action_str.split()[1]) 
+                child_to_add = int(action_str.split()[1])
                 action = {'type':act_type,'child_to_add':child_to_add}
             else:
                 action = {'type':act_type}
@@ -470,7 +499,7 @@ class Parser(object):
 
             else:
                 raise Error('Impermissibe action: %s'%(action))
-            
+
         return state
 
     def draw_graph(self,fname,gtext):
@@ -480,7 +509,7 @@ class Parser(object):
 
         fout.write(template%(gtext))
         fout.close()
-        
+
     def testOracleGuide(self,instance,start_step=0):
         """simulate the oracle's action sequence"""
 
@@ -504,11 +533,11 @@ class Parser(object):
 
             if self.verbose > 0:
                 #print >> sys.stderr, state.print_config()
-                #print state.A.print_tuples()                                    
+                #print state.A.print_tuples()
                 if DRAW_GRAPH:
                     fname = "graph"+str(state.sentID)+"_s"+str(step)
                     self.draw_graph(fname,state.A.getPGStyleGraph((state.idx,state.cidx)))
-            
+
 
             if state.idx == START_ID:
                 action,label = {'type':NEXT2},None
@@ -537,7 +566,7 @@ class Parser(object):
                     path_pos_str.append(GraphState.sent[path[-1]]['rel'])
                     print >> sys.stderr,'path for current edge', path, path_pos_str
                     print >> sys.stderr,'Deleted children','b0',sorted([GraphState.sent[j]['form'].lower() for j in state.A.nodes[state.cidx].del_child]),'s0',sorted([GraphState.sent[j]['form'].lower() for j in state.A.nodes[state.idx].del_child])
-                ''' 
+                '''
             if state.is_permissible(action):
                 if action['type'] in ACTION_WITH_EDGE:
                     action['edge_label'] = label
@@ -554,17 +583,17 @@ class Parser(object):
 
         # deal with graph with no root
         state.A.post_process()
-            
+
         return state
 
     def errorAnalyze(self,parsed_span_graph,gold_span_graph,instance,error_stat):
         """transformations as error types"""
-            
+
         state = Parser.State.init_state(instance,self.verbose)
         seq = []
         for r in sorted(parsed_span_graph.multi_roots,reverse=True): seq += parsed_span_graph.postorder(root=r)
         seq.append(-1)
-        sigma = Buffer(seq)        
+        sigma = Buffer(seq)
         sigma.push(START_ID)
         state.sigma = sigma
         state.idx = sigma.top()
@@ -579,7 +608,7 @@ class Parser(object):
         while not state.is_terminal():
 
             if self.verbose > 0:
-                print >> sys.stderr, state.print_config()            
+                print >> sys.stderr, state.print_config()
 
             if state.idx == START_ID:
                 action,label = {'type':NEXT2},None
@@ -590,7 +619,7 @@ class Parser(object):
                 #print "Step %s:take action %s"%(step,action)
                 print >> sys.stderr, "Step %s:take action %s, edge label %s | State:sigma:%s beta:%s" % (step,action,label,state.sigma,state.beta)
 
-            
+
             if state.is_permissible(action):
                 if action['type'] == NEXT1:
                     if label != None and label != START_EDGE:
@@ -605,7 +634,7 @@ class Parser(object):
                 elif action['type'] == DELETENODE:
                     tag = state.get_current_node().tag
                     error_stat['node_error']['extra_node_error'][tag].append(state.sentID)
-                elif action['type'] == INFER:                    
+                elif action['type'] == INFER:
                     error_stat['node_error']['missing_node_error'][label].append(state.sentID)
                 elif action['type'] in [REATTACH,REENTRANCE]:
                     btag = state.get_current_child().tag
@@ -615,7 +644,7 @@ class Parser(object):
                     atag = state.A.nodes[aid].tag
                     act_name = GraphState.action_table[action['type']]
                     if isinstance(aid,int):
-                        apos = GraphState.sent[aid]['pos'] 
+                        apos = GraphState.sent[aid]['pos']
                         error_stat['edge_error'][act_name][bpos+brel+apos].append(state.sentID)
                     else:
                         apos = atag
@@ -627,8 +656,8 @@ class Parser(object):
                     bpos = GraphState.sent[state.cidx]['pos'] if isinstance(state.cidx,int) else btag
                     act_name = GraphState.action_table[action['type']]
                     error_stat['edge_error'][act_name][pos+bpos].append(state.sentID)
-                    
-                
+
+
                 if action['type'] in ACTION_WITH_EDGE:
                     action['edge_label'] = label
                 elif action['type'] in ACTION_WITH_TAG:
@@ -645,8 +674,8 @@ class Parser(object):
 
         # deal with graph with no root
         state.A.post_process()
-            
-                                  
+
+
     def record_actions(self,outfile):
         output = open(outfile,'w')
         for act in list(Parser.State.new_actions):
@@ -654,9 +683,7 @@ class Parser(object):
         output.close()
 
 
-            
-        
+
+
 if __name__ == "__main__":
     pass
-    
-
